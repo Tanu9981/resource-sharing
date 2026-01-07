@@ -1,128 +1,261 @@
 import { useState } from "react";
 import {
   Box,
-  Card,
   Typography,
   TextField,
   Button,
-  Tabs,
-  Tab,
   InputAdornment,
-  IconButton
+  IconButton,
+  Alert,
+  AppBar,
+  Toolbar,
+  Divider
 } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
+import {
+  signInWithEmailAndPassword,
+  signInWithPopup
+} from "firebase/auth";
+import { auth, googleProvider, db } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
+import logo from "../assets/logo.png";
+
 export default function Login() {
-  const [role, setRole] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleEmailLogin = async () => {
+    setError("");
+    if (!email || !password) {
+      setError("Please enter email and password");
+      return;
+    }
+
+    try {
+      const result = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const user = result.user;
+
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+
+      if (!snap.exists()) {
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          name: "",
+          photoURL: "",
+          createdAt: new Date()
+        });
+      }
+
+      navigate("/browse");
+    } catch (err) {
+      console.error(err);
+      setError("Invalid email or password");
+    }
+  };
+
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoadingGoogle(true);
+      setError("");
+
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+
+      if (!snap.exists()) {
+        await setDoc(userRef, {
+          uid: user.uid,
+          name: user.displayName || "",
+          email: user.email,
+          photoURL: user.photoURL || "",
+          createdAt: new Date()
+        });
+      }
+
+      navigate("/browse");
+    } catch (err) {
+      console.error(err);
+      setError("Google sign-in failed");
+    } finally {
+      setLoadingGoogle(false);
+    }
+  };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        backgroundColor: "#f4f6fb",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center"
-      }}
-    >
-      <Card
-        sx={{
-          width: 380,
-          p: 4,
-          borderRadius: 3,
-          boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
-        }}
-      >
-        <Typography variant="h5" fontWeight="bold" textAlign="center">
-          ResourceHub
-        </Typography>
+    <>
+      <AppBar position="sticky" sx={{ bgcolor: "#0f172a" }} elevation={1}>
+        <Toolbar>
+          <Box
+            sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          >
+            <Box
+              component="img"
+              src={logo}
+              alt="logo"
+              sx={{ width: 90, mr: 1 }}
+            />
+            <Typography variant="h5" fontWeight="800" color="#38bdf8">
+              ResourceHub
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          textAlign="center"
-          mb={2}
-        >
-          Sign in to access your resource sharing platform
-        </Typography>
-
-        {/* Role Tabs */}
-        <Tabs
-          value={role}
-          onChange={(e, newValue) => setRole(newValue)}
-          centered
-          sx={{ mb: 3 }}
-        >
-          <Tab label="Junior" />
-          <Tab label="Senior" />
-          <Tab label="Admin" />
-        </Tabs>
-
-        {/* Email */}
-        <TextField
-          fullWidth
-          placeholder="your.email@college.edu"
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <EmailIcon color="primary" />
-              </InputAdornment>
-            )
-          }}
-        />
-
-        {/* Password */}
-        <TextField
-          fullWidth
-          type={showPassword ? "text" : "password"}
-          placeholder="Enter your password"
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <LockIcon color="primary" />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-        />
-
-        <Button
-          fullWidth
-          variant="contained"
+      <Box sx={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
+        {/* LEFT */}
+        <Box
           sx={{
-            mt: 3,
-            py: 1.2,
-            borderRadius: 2,
-            backgroundColor: "#6c7cff"
+            flex: 1,
+            display: { xs: "none", md: "flex" },
+            alignItems: "center",
+            justifyContent: "center",
+            background: "linear-gradient(135deg,#020617,#0f172a)"
           }}
         >
-          Sign In
-        </Button>
+          <Typography variant="h3" color="#38bdf8" fontWeight="800">
+            ResourceHub
+          </Typography>
+        </Box>
 
-        <Typography
-          variant="body2"
-          textAlign="center"
-          mt={2}
-          color="text.secondary"
+        
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#020617"
+          }}
         >
-          Don&apos;t have an account?{" "}
-          <span style={{ color: "#6c7cff", cursor: "pointer" }}>
-            Sign up
-          </span>
-        </Typography>
-      </Card>
-    </Box>
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: 420,
+              p: 4,
+              bgcolor: "rgba(15,23,42,0.9)",
+              borderRadius: 3
+            }}
+          >
+            <Typography variant="h4" color="#38bdf8" fontWeight="800" mb={2}>
+              User Login
+            </Typography>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            <TextField
+              fullWidth
+              margin="normal"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon sx={{ color: "#38bdf8" }} />
+                  </InputAdornment>
+                )
+              }}
+              sx={{
+                input: { color: "#e2e8f0" },
+                "& .MuiOutlinedInput-root": { bgcolor: "#020617" }
+              }}
+            />
+
+            <TextField
+              fullWidth
+              margin="normal"
+              placeholder="Password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon sx={{ color: "#38bdf8" }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      sx={{ color: "#94a3b8" }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+              sx={{
+                input: { color: "#e2e8f0" },
+                "& .MuiOutlinedInput-root": { bgcolor: "#020617" }
+              }}
+            />
+
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{
+                mt: 2,
+                py: 1.4,
+                fontWeight: 700,
+                bgcolor: "#38bdf8",
+                color: "#020617",
+                "&:hover": { bgcolor: "#0ea5e9" }
+              }}
+              onClick={handleEmailLogin}
+            >
+              Sign In
+            </Button>
+
+            <Divider sx={{ my: 3, borderColor: "#1e293b" }}>
+              OR
+            </Divider>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={handleGoogleLogin}
+              disabled={loadingGoogle}
+              sx={{
+                py: 1.3,
+                fontWeight: 700,
+                borderColor: "#38bdf8",
+                color: "#38bdf8",
+                "&:hover": {
+                  bgcolor: "rgba(56,189,248,0.1)"
+                }
+              }}
+            >
+              {loadingGoogle ? "Signing in..." : "Continue with Google"}
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    </>
   );
 }

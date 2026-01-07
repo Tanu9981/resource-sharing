@@ -10,82 +10,119 @@ import {
   Card,
   CardContent,
   Stack,
-  Divider,
-  Link
+  Divider
 } from "@mui/material";
-import SchoolIcon from "@mui/icons-material/School";
-import FolderSharedIcon from "@mui/icons-material/FolderShared";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
+import { useAuth } from "../auth/AuthContext";
+import logo from "../assets/logo.png";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleProtectedNav = (path) => {
+    if (!user) {
+      navigate("/login");
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/login");
+  };
 
   return (
-    <Box sx={{ fontFamily: "Poppins, sans-serif" }}>
-
-      {/* ====== NAVBAR ====== */}
-      <AppBar position="static" sx={{ backgroundColor: "#203040", px: 2 }}>
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: "800", cursor: "pointer" }}
+    <Box sx={{ fontFamily: "Poppins, sans-serif", bgcolor: "#f8fafc" }}>
+      <AppBar position="sticky" elevation={1} sx={{ bgcolor: "#0f172a" }}>
+        <Toolbar>
+          <Box
+            sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
             onClick={() => navigate("/")}
           >
-            ResourceHub
-          </Typography>
+            <Box
+              component="img"
+              src={logo}
+              alt="ResourceHub Logo"
+              sx={{ width: 90, height: 90, mr: 1.5 }}
+            />
+            <Typography
+              variant="h5"
+              fontWeight="800"
+              sx={{ color: "#38bdf8", letterSpacing: "0.5px" }}
+            >
+              ResourceHub
+            </Typography>
+          </Box>
 
-          <Stack direction="row" spacing={2}>
-            <Button color="inherit" onClick={() => navigate("/login")}>
-              Login
-            </Button>
-            <Button color="inherit" onClick={() => navigate("/browse")}>
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Stack direction="row" spacing={3}>
+            {!user ? (
+              <Button color="inherit" onClick={() => navigate("/login")}>
+                Login
+              </Button>
+            ) : (
+              <Button color="inherit" onClick={handleLogout}>
+                Logout
+              </Button>
+            )}
+
+            <Button color="inherit" onClick={() => handleProtectedNav("/browse")}>
               Browse
             </Button>
-            <Button color="inherit" onClick={() => navigate("/upload")}>
+            <Button color="inherit" onClick={() => handleProtectedNav("/upload")}>
               Upload
             </Button>
-            <Button color="inherit" onClick={() => navigate("/admin")}>
+            <Button color="inherit" onClick={() => handleProtectedNav("/admin")}>
               Admin
             </Button>
           </Stack>
         </Toolbar>
       </AppBar>
 
-      {/* ====== HERO SECTION ====== */}
       <Box
         sx={{
-          minHeight: "75vh",
-          background: "linear-gradient(135deg, #4e54c8, #8f94fb)",
-          color: "#fff",
+          minHeight: "80vh",
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1524995997946-a1c2e315a42f)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          position: "relative",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          px: 3,
-          py: 8
+          alignItems: "center"
         }}
       >
-        <Container maxWidth="md">
-          <Typography variant="h3" fontWeight="800" gutterBottom>
-            Find & Share Academic Resources Easily
-          </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.9, mb: 4 }}>
-            A community-driven space where engineering students discover notes,
-            PYQs, and study links to succeed together.
+        <Box sx={{ position: "absolute", inset: 0, bgcolor: "rgba(15,23,42,0.85)" }} />
+
+        <Container sx={{ position: "relative", zIndex: 2 }}>
+          <Typography variant="h3" fontWeight="800" color="#f8fafc" gutterBottom>
+            Academic Resource Sharing Platform
           </Typography>
 
-          <Stack direction="row" spacing={3} justifyContent="center">
+          <Typography variant="h6" sx={{ color: "#cbd5f5", maxWidth: 720, mb: 4 }}>
+            A centralized platform where seniors upload verified notes and juniors
+            access semester-wise study resources effortlessly.
+          </Typography>
+
+          <Stack direction="row" spacing={3}>
             <Button
               variant="contained"
               size="large"
-              onClick={() => navigate("/browse")}
               sx={{
-                backgroundColor: "#ff7f50",
-                color: "#fff",
+                bgcolor: "#38bdf8",
+                color: "#0f172a",
                 px: 4,
-                "&:hover": { backgroundColor: "#ff6a33" }
+                fontWeight: 600,
+                "&:hover": { bgcolor: "#0ea5e9" }
               }}
+              onClick={() => handleProtectedNav("/browse")}
             >
               Browse Resources
             </Button>
@@ -93,80 +130,55 @@ export default function Landing() {
             <Button
               variant="outlined"
               size="large"
-              onClick={() => navigate("/upload")}
-              sx={{
-                borderColor: "#fff",
-                color: "#fff",
-                px: 4,
-                "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" }
-              }}
+              sx={{ borderColor: "#cbd5f5", color: "#cbd5f5", px: 4 }}
+              onClick={() => handleProtectedNav("/upload")}
             >
-              Upload Resource
+              Upload Notes
             </Button>
           </Stack>
         </Container>
       </Box>
 
-      {/* ====== FEATURES SECTION ====== */}
-      <Container sx={{ py: 6 }}>
-        <Typography
-          variant="h4"
-          textAlign="center"
-          fontWeight="700"
-          gutterBottom
-          color="text.primary"
-        >
-          What You Can Do
-        </Typography>
-
-        <Typography
-          variant="body1"
-          textAlign="center"
-          color="text.secondary"
-          sx={{ maxWidth: 800, mx: "auto", mb: 4 }}
-        >
-          ResourceHub makes academic collaboration simple — organized by semester,
-          subject, and type for quick access.
-        </Typography>
-
-        <Grid container spacing={4}>
+      <Container sx={{ py: 8, maxWidth: "lg" }}>
+        <Grid container spacing={4} justifyContent="center">
           {[
             {
-              icon: <SchoolIcon sx={{ fontSize: 50, color: "#203040" }} />,
-              title: "Browse Notes",
-              description:
-                "Explore well-organized notes and study materials."
+              icon: <MenuBookIcon sx={{ fontSize: 42, color: "#0ea5e9" }} />,
+              title: "Organized Resources",
+              desc: "Notes, PYQs and links arranged by semester and subject."
             },
             {
-              icon: <FolderSharedIcon sx={{ fontSize: 50, color: "#ff7f50" }} />,
-              title: "Share Knowledge",
-              description: "Upload your own resources to help others."
+              icon: <CloudUploadIcon sx={{ fontSize: 42, color: "#0284c7" }} />,
+              title: "Easy Upload",
+              desc: "Seniors can upload Google Drive links in seconds."
             },
             {
-              icon: <CloudUploadIcon sx={{ fontSize: 50, color: "#8f94fb" }} />,
-              title: "Upload Easily",
-              description: "Submit files or links in just a few steps."
+              icon: <VerifiedIcon sx={{ fontSize: 42, color: "#0369a1" }} />,
+              title: "Admin Verified",
+              desc: "All resources are approved by admins before publishing."
             }
           ].map((item, i) => (
             <Grid item xs={12} md={4} key={i}>
               <Card
                 sx={{
                   borderRadius: 3,
-                  boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
-                  transition: "0.3s ease",
+                  height: "100%",
+                  textAlign: "center",
+                  transition: "all 0.35s ease",
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
                   "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: "0 12px 35px rgba(0,0,0,0.15)"
+                    transform: "translateY(-8px)",
+                    boxShadow: "0 20px 40px rgba(2, 0, 36, 0.18)"
                   }
                 }}
               >
-                <CardContent sx={{ textAlign: "center", py: 4 }}>
+                <CardContent sx={{ py: 5 }}>
                   {item.icon}
                   <Typography variant="h6" fontWeight="700" mt={2}>
                     {item.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" mt={1}>
-                    {item.description}
+                    {item.desc}
                   </Typography>
                 </CardContent>
               </Card>
@@ -175,101 +187,17 @@ export default function Landing() {
         </Grid>
       </Container>
 
-      {/* ====== ABOUT SECTION ====== */}
-      <Box sx={{ backgroundColor: "#f7f9fc", py: 5 }}>
+      <Box sx={{ bgcolor: "#020617", color: "#cbd5f5", py: 4 }}>
         <Container>
-          <Typography
-            variant="h4"
-            textAlign="center"
-            fontWeight="700"
-            mb={2}
-          >
-            About ResourceHub
+          <Typography textAlign="center" fontWeight="700" color="#38bdf8">
+            ResourceHub
           </Typography>
-
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            textAlign="center"
-            mx="auto"
-            sx={{ maxWidth: 800 }}
-          >
-            ResourceHub connects engineering students with academic
-            resources shared by seniors — making learning easier,
-            collaborative, and stress-free.
+          <Typography textAlign="center" variant="body2" color="#94a3b8" mt={1}>
+            A college-level academic resource sharing system
           </Typography>
-        </Container>
-      </Box>
-
-      {/* ====== FOOTER ====== */}
-      <Box
-        sx={{
-          backgroundColor: "#203040",
-          color: "#fff",
-          py: 6,
-          px: 2
-        }}
-      >
-        <Container>
-          <Grid container spacing={4}>
-            {/* Footer Section 1 */}
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="700" mb={1}>
-                ResourceHub
-              </Typography>
-              <Typography variant="body2">
-                A student-focused hub for academic notes, links, and PYQs.
-              </Typography>
-            </Grid>
-
-            {/* Footer Links */}
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="700" mb={1}>
-                Quick Links
-              </Typography>
-
-              <Stack spacing={1}>
-                <Link
-                  sx={{ color: "#fff", cursor: "pointer" }}
-                  onClick={() => navigate("/browse")}
-                >
-                  Browse
-                </Link>
-                <Link
-                  sx={{ color: "#fff", cursor: "pointer" }}
-                  onClick={() => navigate("/upload")}
-                >
-                  Upload
-                </Link>
-                <Link
-                  sx={{ color: "#fff", cursor: "pointer" }}
-                  onClick={() => navigate("/login")}
-                >
-                  Login
-                </Link>
-                <Link
-                  sx={{ color: "#fff", cursor: "pointer" }}
-                  onClick={() => navigate("/admin")}
-                >
-                  Admin
-                </Link>
-              </Stack>
-            </Grid>
-
-            {/* Contact Info */}
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="700" mb={1}>
-                Contact Us
-              </Typography>
-              <Typography variant="body2">📧 support@resourcehub.com</Typography>
-              <Typography variant="body2">📞 +91 91234 56789</Typography>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ borderColor: "#444", my: 2 }} />
-
-          <Typography variant="body2" textAlign="center" sx={{ color: "#bbb" }}>
-            © {new Date().getFullYear()} ResourceHub. All Rights Reserved.
+          <Divider sx={{ my: 2, borderColor: "#1e293b" }} />
+          <Typography textAlign="center" variant="caption" color="#64748b">
+            © {new Date().getFullYear()} ResourceHub
           </Typography>
         </Container>
       </Box>

@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -15,101 +14,184 @@ import {
   Stack,
   Chip,
   TextField,
-  Divider
+  Divider,
+  AppBar,
+  Toolbar
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import LogoutIcon from "@mui/icons-material/Logout";
+import LockIcon from "@mui/icons-material/Lock";
+import { useNavigate } from "react-router-dom";
 
-const dummyResources = [
-  { id: 1, title: "Python Basics Notes", subject: "Python", semester: "1", type: "Notes", year: 2024, uploader: "Rahul", downloads: 1450 },
-  { id: 2, title: "Java Advanced PYQ", subject: "Java", semester: "2", type: "PYQ", year: 2023, uploader: "Priya", downloads: 2340 },
-  { id: 3, title: "Excel Advanced Notes", subject: "Advanced Excel", semester: "3", type: "Notes", year: 2024, uploader: "Amit", downloads: 980 },
-  { id: 4, title: "Python OOP Explained", subject: "Python", semester: "4", type: "Notes", year: 2023, uploader: "Shiv", downloads: 1500 },
-  { id: 5, title: "Java Spring Boot Overview", subject: "Java", semester: "5", type: "Link", year: 2024, uploader: "Ankit", downloads: 1100 },
-  { id: 6, title: "Excel Dashboard Tutorial", subject: "Advanced Excel", semester: "6", type: "Link", year: 2024, uploader: "Neha", downloads: 430 },
-  { id: 7, title: "Python Web Dev Notes", subject: "Python", semester: "7", type: "Notes", year: 2023, uploader: "Vikas", downloads: 1550 },
-  { id: 8, title: "Java Best Practices", subject: "Java", semester: "8", type: "Notes", year: 2024, uploader: "Ritu", downloads: 298 },
-  { id: 9, title: "Excel Formulas Cheatsheet", subject: "Advanced Excel", semester: "9", type: "PYQ", year: 2023, uploader: "Deepak", downloads: 640 }
-];
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { db, auth } from "../firebase";
+import logo from "../assets/logo.png";
 
 export default function Browse() {
   const navigate = useNavigate();
+
+  const [resources, setResources] = useState([]);
+  const [course] = useState("mtech_ai_ds");
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
   const [type, setType] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const filteredResources = dummyResources.filter((resource) => {
-    const matchesSemester = semester ? resource.semester === semester : true;
-    const matchesSubject = subject ? resource.subject === subject : true;
-    const matchesType = type ? resource.type === type : true;
-    const matchesSearch = searchQuery
-      ? resource.title.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    return matchesSemester && matchesSubject && matchesType && matchesSearch;
-  });
+  useEffect(() => {
+    const fetchResources = async () => {
+      const q = query(
+        collection(db, "resources"),
+        where("approved", "==", true)
+      );
+      const snapshot = await getDocs(q);
+      setResources(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    };
+    fetchResources();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/login", { replace: true });
+  };
+
+  const uniqueSubjects = [
+    ...new Set(resources.map(r => r.subject).filter(Boolean))
+  ];
+
+  const filteredResources = resources.filter(r =>
+    (!semester || String(r.semester) === semester) &&
+    (!subject || r.subject === subject) &&
+    (!type || r.type === type) &&
+    (!searchQuery || r.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      {/* ------ TITLE ------ */}
-      <Typography variant="h4" fontWeight="700" color="primary" textAlign="center">
-        Browse Resources
-      </Typography>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at top, #0f172a 0%, #020617 60%)",
+        color: "#fff"
+      }}
+    >
+      <AppBar position="sticky" sx={{ bgcolor: "#020617" }}>
+        <Toolbar sx={{ justifyContent: "space-between" }}>
+          <Box
+            sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          >
+            <Box
+              component="img"
+              src={logo}
+              alt="ResourceHub Logo"
+              sx={{ width: 100, height: 100, mr: 1.5 }}
+            />
+            <Typography
+              variant="h5"
+              fontWeight="800"
+              sx={{ color: "#38bdf8", letterSpacing: "0.5px" }}
+            >
+              ResourceHub
+            </Typography>
+          </Box>
 
-      <Typography variant="body2" color="text.secondary" textAlign="center" mb={3}>
-        Search and filter study resources shared by seniors
-      </Typography>
+          <Stack direction="row" spacing={2}>
+            <Button color="inherit" onClick={() => navigate("/")}>
+              Home
+            </Button>
+            <Button color="inherit" onClick={() => navigate("/upload")}>
+              Upload
+            </Button>
+            <Button
+              color="inherit"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          </Stack>
+        </Toolbar>
+      </AppBar>
 
-      {/* ------ FILTER BAR ------ */}
+      <Box sx={{ textAlign: "center", py: 5 }}>
+        <Typography variant="h4" fontWeight={700}>
+          Browse Resources
+        </Typography>
+        <Typography sx={{ color: "#cbd5f5", mt: 1 }}>
+          Semester-wise academic resources shared by seniors
+        </Typography>
+      </Box>
+
+      <Box sx={{ maxWidth: 420, mx: "auto", mb: 3 }}>
+        <FormControl fullWidth>
+          <InputLabel sx={{ color: "#fff" }}>Course</InputLabel>
+          <Select value={course} sx={{ color: "#fff" }}>
+            <MenuItem value="mtech_ai_ds">
+              Integrated M.Tech (AI & DS – 5 Year)
+            </MenuItem>
+            <MenuItem disabled>
+              <LockIcon sx={{ fontSize: 16, mr: 1 }} /> MBA — Coming Soon
+            </MenuItem>
+            <MenuItem disabled>
+              <LockIcon sx={{ fontSize: 16, mr: 1 }} /> BDA — Coming Soon
+            </MenuItem>
+            <MenuItem disabled>
+              <LockIcon sx={{ fontSize: 16, mr: 1 }} /> MTech-2year — Coming Soon
+            </MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
         justifyContent="center"
-        alignItems="center"
-        mb={2}
+        mb={3}
+        sx={{
+          px: 2,
+          "& .MuiInputBase-root": {
+            bgcolor: "#ffffff",
+            borderRadius: 2
+          }
+        }}
       >
         <TextField
           label="Search by title"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: { xs: "100%", md: 350 } }}
+          sx={{ minWidth: 240 }}
         />
 
-        <FormControl sx={{ minWidth: 140 }}>
+        <FormControl sx={{ minWidth: 160 }}>
           <InputLabel>Semester</InputLabel>
-          <Select
-            value={semester}
-            onChange={(e) => setSemester(e.target.value)}
-            label="Semester"
-          >
+          <Select value={semester} onChange={(e) => setSemester(e.target.value)}>
             <MenuItem value="">All</MenuItem>
-            {[...Array(10).keys()].map((i) => (
-              <MenuItem key={i + 1} value={`${i + 1}`}>Sem {i + 1}</MenuItem>
+            {[...Array(10)].map((_, i) => (
+              <MenuItem key={i} value={`${i + 1}`}>
+                Semester {i + 1}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 180 }}>
+        <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Subject</InputLabel>
-          <Select
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            label="Subject"
-          >
+          <Select value={subject} onChange={(e) => setSubject(e.target.value)}>
             <MenuItem value="">All</MenuItem>
-            <MenuItem value="Python">Python</MenuItem>
-            <MenuItem value="Java">Java</MenuItem>
-            <MenuItem value="Advanced Excel">Advanced Excel</MenuItem>
+            {uniqueSubjects.map(sub => (
+              <MenuItem key={sub} value={sub}>
+                {sub}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 140 }}>
+        <FormControl sx={{ minWidth: 160 }}>
           <InputLabel>Type</InputLabel>
-          <Select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            label="Resource Type"
-          >
+          <Select value={type} onChange={(e) => setType(e.target.value)}>
             <MenuItem value="">All</MenuItem>
             <MenuItem value="Notes">Notes</MenuItem>
             <MenuItem value="PYQ">PYQ</MenuItem>
@@ -118,85 +200,48 @@ export default function Browse() {
         </FormControl>
       </Stack>
 
-      <Divider />
+      <Divider sx={{ borderColor: "#1e293b", mb: 4 }} />
 
-      {/* ------ RESOURCE CARDS GRID ------ */}
-      <Grid container spacing={4} sx={{ mt: 2 }} justifyContent="center">
-        {filteredResources.length === 0 && (
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            textAlign="center"
-            width="100%"
-            mt={4}
-          >
-            No resources found.
-          </Typography>
-        )}
-
-        {filteredResources.map((res) => (
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={4}
-            key={res.id}
-            sx={{ display: "flex", justifyContent: "center" }}
-          >
+      <Grid container spacing={4} px={{ xs: 2, md: 6 }} pb={6}>
+        {filteredResources.map(res => (
+          <Grid item xs={12} sm={6} md={4} key={res.id}>
             <Card
-              elevation={3}
               sx={{
-                maxWidth: 420,
-                width: "100%",
+               background: "linear-gradient(180deg, #020617 0%, #020617 100%)",
                 borderRadius: 3,
+                height: "100%",
+                transition: "0.3s ease",
                 "&:hover": {
-                  boxShadow: "0 8px 28px rgba(0,0,0,0.18)"
+                  transform: "translateY(-6px)",
+                  boxShadow: "0 0 25px rgba(56,189,248,0.35)"
                 }
               }}
             >
               <CardContent>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Chip
-                    label={res.type}
-                    color={
-                      res.type === "Notes"
-                        ? "primary"
-                        : res.type === "PYQ"
-                        ? "warning"
-                        : "success"
-                    }
-                    size="small"
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {res.year}
-                  </Typography>
-                </Stack>
-
-                <Typography variant="h6" fontWeight="600" mt={1}>
+                <Chip label={res.type} color="primary" size="small" />
+                <Typography variant="h6" mt={1} color="#ffffff">
                   {res.title}
                 </Typography>
-
-                <Typography variant="body2" color="text.secondary">
+                <Typography sx={{ color: "#e5e7eb", fontSize: 14 }}>
                   {res.subject} • Semester {res.semester}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" mb={1}>
+                <Typography sx={{ color: "#cbd5f5", fontSize: 13, mt: 0.5 }}>
                   Uploaded by {res.uploader}
                 </Typography>
               </CardContent>
 
-              <CardActions sx={{ justifyContent: "space-between", px: 2 }}>
-                {/* Updated View button to navigate */}
-                <Button
-                  size="small"
-                  startIcon={<VisibilityIcon />}
-                  onClick={() => navigate(`/resource/${res.id}`)}
-                >
-                  View
-                </Button>
-
-                <Button size="small" startIcon={<DownloadIcon />}>
-                  Download
-                </Button>
+              <CardActions sx={{ px: 2, pb: 2 }}>
+                {res.driveLink && (
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    sx={{ fontWeight: 600,bgcolor: "#1d4ed8","&:hover": { bgcolor: "#2563eb" } }}
+                    onClick={() => window.open(res.driveLink, "_blank")}
+                  >
+                    OPEN NOTES
+                  </Button>
+                )}
               </CardActions>
             </Card>
           </Grid>

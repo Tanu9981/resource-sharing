@@ -10,194 +10,300 @@ import {
   Select,
   Button,
   Stack,
-  Divider
+  Divider,
+  AppBar,
+  Toolbar
 } from "@mui/material";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { db, auth } from "../firebase";
+import { useNavigate } from "react-router-dom";
+import logo from "../assets/logo.png";
 
 export default function Upload() {
+  const navigate = useNavigate();
+
   const [title, setTitle] = useState("");
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
+  const [customSubject, setCustomSubject] = useState("");
   const [type, setType] = useState("");
   const [year, setYear] = useState("");
   const [description, setDescription] = useState("");
-  const [file, setFile] = useState(null);
-  const [link, setLink] = useState("");
+  const [driveLink, setDriveLink] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    if (!title || !semester || !subject || !type) {
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/login", { replace: true });
+  };
+
+  const handleSubmit = async () => {
+    const finalSubject =
+      subject === "Other" ? customSubject.trim() : subject;
+
+    if (!title || !semester || !finalSubject || !type || !driveLink) {
       alert("Please fill all required fields!");
       return;
     }
 
-    if (type !== "Link" && !file) {
-      alert("Please upload a file!");
-      return;
+    try {
+      setLoading(true);
+
+      await addDoc(collection(db, "resources"), {
+        title,
+        subject: finalSubject,
+        semester: Number(semester),
+        type,
+        year: year || "",
+        description,
+        driveLink,
+        uploader: "Tanu",
+        approved: false,
+        createdAt: serverTimestamp()
+      });
+
+      alert("Resource submitted! Waiting for admin approval.");
+
+      setTitle("");
+      setSemester("");
+      setSubject("");
+      setCustomSubject("");
+      setType("");
+      setYear("");
+      setDescription("");
+      setDriveLink("");
+    } catch (err) {
+      alert("Something went wrong!");
+    } finally {
+      setLoading(false);
     }
-
-    if (type === "Link" && !link) {
-      alert("Please add a valid link!");
-      return;
-    }
-
-    const data = {
-      title,
-      semester,
-      subject,
-      type,
-      year,
-      description,
-      file,
-      link,
-    };
-
-    console.log("Form Data:", data);
-    alert("Resource submitted! (UI only)");
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        width: "100%",
-        p: { xs: 2, md: 4 }
-      }}
-    >
-      <Card
+    <>
+      <AppBar position="sticky" sx={{ bgcolor: "#0f172a" }} elevation={1}>
+        <Toolbar>
+          <Box
+            sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          >
+            <Box
+              component="img"
+              src={logo}
+              alt="ResourceHub Logo"
+              sx={{ width: 100, height: 100, mr: 1.5 }}
+            />
+            <Typography
+              variant="h5"
+              fontWeight="800"
+              sx={{ color: "#38bdf8", letterSpacing: "0.5px" }}
+            >
+              ResourceHub
+            </Typography>
+          </Box>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Button color="inherit" onClick={() => navigate("/")}>
+            Home
+          </Button>
+          <Button color="inherit" onClick={() => navigate("/browse")}>
+            Browse
+          </Button>
+          <Button color="inherit" onClick={handleLogout}>
+            Logout
+          </Button>
+        </Toolbar>
+      </AppBar>
+
+      <Box
         sx={{
-          width: "100%",
-          maxWidth: 650,
-          p: 3,
-          borderRadius: 3,
-          boxShadow: "0 8px 20px rgba(0,0,0,0.10)"
+          minHeight: "calc(100vh - 64px)",
+          px: { xs: 2, md: 6 },
+          py: 4,
+          background:
+            "linear-gradient(135deg, #020617, #020617 40%, #0f172a)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          position: "relative"
         }}
       >
-        {/* Header */}
-        <Typography
-          variant="h4"
-          textAlign="center"
-          fontWeight="700"
-          gutterBottom
+        <Box
+          sx={{
+            position: "absolute",
+            top: "-120px",
+            left: "-120px",
+            width: 320,
+            height: 320,
+            bgcolor: "#38bdf8",
+            borderRadius: "50%",
+            filter: "blur(160px)",
+            opacity: 0.25
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: "-120px",
+            right: "-120px",
+            width: 360,
+            height: 360,
+            bgcolor: "#6366f1",
+            borderRadius: "50%",
+            filter: "blur(180px)",
+            opacity: 0.25
+          }}
+        />
+
+        <Card
+          sx={{
+            width: "100%",
+            maxWidth: 1100,
+            minHeight: "85vh",
+            p: { xs: 3, md: 5 },
+            borderRadius: 4,
+            bgcolor: "rgba(255, 255, 255, 0.92)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
+            position: "relative",
+            zIndex: 2
+          }}
         >
-          Upload a New Resource
-        </Typography>
+          <Typography
+            variant="h4"
+            fontWeight="800"
+            textAlign="center"
+            color="#07244dff"
+          >
+            Upload Academic Resource
+          </Typography>
 
-        <Divider sx={{ mb: 2 }} />
+          <Typography
+            variant="body1"
+            textAlign="center"
+            color="#07244dff"
+            mt={1}
+          >
+            Share verified notes, PYQs, or links for juniors
+          </Typography>
 
-        {/* Form */}
-        <Stack spacing={2}>
-          {/* Title */}
-          <TextField
-            label="Resource Title *"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            fullWidth
-          />
+          <Divider sx={{ my: 3, borderColor: "#07244dff" }} />
 
-          {/* Semester */}
-          <FormControl fullWidth>
-            <InputLabel>Semester *</InputLabel>
-            <Select
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-              label="Semester *"
-            >
-              {[...Array(10).keys()].map((i) => (
-                <MenuItem key={i + 1} value={`${i + 1}`}>
-                  Semester {i + 1}
+          <Stack spacing={3}>
+            <TextField
+              label="Resource Title *"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              fullWidth
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Semester *</InputLabel>
+              <Select
+                value={semester}
+                label="Semester *"
+                onChange={(e) => setSemester(e.target.value)}
+              >
+                {[...Array(10).keys()].map((i) => (
+                  <MenuItem key={i + 1} value={i + 1}>
+                    Semester {i + 1}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Subject *</InputLabel>
+              <Select
+                value={subject}
+                label="Subject *"
+                onChange={(e) => setSubject(e.target.value)}
+              >
+                <MenuItem value="Python">Python</MenuItem>
+                <MenuItem value="Java">Java</MenuItem>
+                <MenuItem value="Software Engineering">
+                  Software Engineering
                 </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                <MenuItem value="Data Engineering">
+                  Data Engineering
+                </MenuItem>
+                <MenuItem value="Computer Networks">
+                  Computer Networks
+                </MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
+            </FormControl>
 
-          {/* Subject */}
-          <FormControl fullWidth>
-            <InputLabel>Subject *</InputLabel>
-            <Select
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              label="Subject *"
-            >
-              <MenuItem value="Python">Python</MenuItem>
-              <MenuItem value="Java">Java</MenuItem>
-              <MenuItem value="Advanced Excel">Advanced Excel</MenuItem>
-              <MenuItem value="Other">Other</MenuItem>
-            </Select>
-          </FormControl>
+            {subject === "Other" && (
+              <TextField
+                label="Enter Subject Name *"
+                value={customSubject}
+                onChange={(e) => setCustomSubject(e.target.value)}
+                fullWidth
+              />
+            )}
 
-          {/* Type */}
-          <FormControl fullWidth>
-            <InputLabel>Type *</InputLabel>
-            <Select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              label="Type *"
-            >
-              <MenuItem value="Notes">Notes</MenuItem>
-              <MenuItem value="PYQ">PYQ</MenuItem>
-              <MenuItem value="Link">Link</MenuItem>
-            </Select>
-          </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Type *</InputLabel>
+              <Select
+                value={type}
+                label="Type *"
+                onChange={(e) => setType(e.target.value)}
+              >
+                <MenuItem value="Notes">Notes</MenuItem>
+                <MenuItem value="PYQ">PYQ</MenuItem>
+                <MenuItem value="Link">Link</MenuItem>
+              </Select>
+            </FormControl>
 
-          {/* Year – only display if PYQ */}
-          {type === "PYQ" && (
+            {type === "PYQ" && (
+              <TextField
+                label="Year"
+                type="number"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                fullWidth
+              />
+            )}
+
             <TextField
-              label="Year"
-              type="number"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              fullWidth
-            />
-          )}
-
-          {/* Description */}
-          <TextField
-            label="Description"
-            multiline
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            fullWidth
-          />
-
-          {/* File / Link */}
-          {type === "Link" ? (
-            <TextField
-              label="External Link"
+              label="Google Drive Link *"
               type="url"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
+              value={driveLink}
+              onChange={(e) => setDriveLink(e.target.value)}
               fullWidth
             />
-          ) : (
+
+            <TextField
+              label="Description (optional)"
+              multiline
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              fullWidth
+            />
+
             <Button
               variant="contained"
-              component="label"
-              startIcon={<UploadFileIcon />}
-              sx={{ py: 1.3 }}
+              size="large"
+              disabled={loading}
+              onClick={handleSubmit}
+              sx={{
+                mt: 2,
+                py: 1.4,
+                fontWeight: 700,
+                bgcolor: "#07244dff",
+                color: "#d5d6deff",
+                "&:hover": { bgcolor: "#111e94ff" }
+              }}
             >
-              Upload File *
-              <input
-                type="file"
-                hidden
-                onChange={(e) => setFile(e.target.files[0])}
-              />
+              {loading ? "Submitting..." : "Submit Resource"}
             </Button>
-          )}
-
-          {/* Submit Button */}
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            sx={{ mt: 2 }}
-            onClick={handleSubmit}
-          >
-            Submit Resource
-          </Button>
-        </Stack>
-      </Card>
-    </Box>
+          </Stack>
+        </Card>
+      </Box>
+    </>
   );
 }
