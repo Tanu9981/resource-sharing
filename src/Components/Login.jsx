@@ -70,8 +70,8 @@ export default function Login() {
 
       navigate("/browse");
     } catch (err) {
-      console.error("LOGIN ERROR:", err.code, err.message);
-      setError(err.message);
+      console.error(err);
+      setError("Invalid email or password");
     } finally {
       setLoadingEmail(false);
     }
