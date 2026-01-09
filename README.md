@@ -17,8 +17,8 @@ ResourceHub is a web app for students in a single department to **upload, approv
 ## 🧑‍💻 Tech Stack
 
 - **Frontend**: React, Vite, MUI/Tailwind-style UI.  
-- **Backend & Services**: Firebase Authentication, Cloud Firestore, Firebase Storage / Drive links.[web:379][web:381]  
-- **Deployment**: Vercel for fast, automatic deployments.[web:408][web:402]
+- **Backend & Services**: Firebase Authentication, Cloud Firestore, Firebase Storage / Drive links. 
+- **Deployment**: Vercel for fast, automatic deployments.
 
 ---
 
