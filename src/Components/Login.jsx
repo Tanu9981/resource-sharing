@@ -17,9 +17,9 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 import {
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
-  createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { auth, googleProvider, db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -33,7 +33,9 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmail, setLoadingEmail] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false); 
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  const normalizedEmail = email.trim().toLowerCase();
 
   const navigate = useNavigate();
 
@@ -46,7 +48,11 @@ export default function Login() {
 
     try {
       setLoadingEmail(true);
-      const result = await signInWithEmailAndPassword(auth, email, password); // [web:2]
+      const result = await signInWithEmailAndPassword(
+        auth,
+        normalizedEmail,
+        password
+      ); // [web:2]
       const user = result.user;
 
       const userRef = doc(db, "users", user.uid);
@@ -64,12 +70,13 @@ export default function Login() {
 
       navigate("/browse");
     } catch (err) {
-      console.error(err);
-      setError("Invalid email or password");
+      console.error("LOGIN ERROR:", err.code, err.message);
+      setError(err.message);
     } finally {
       setLoadingEmail(false);
     }
   };
+
   const handleEmailSignUp = async () => {
     setError("");
     if (!email || !password) {
@@ -81,9 +88,9 @@ export default function Login() {
       setLoadingEmail(true);
       const result = await createUserWithEmailAndPassword(
         auth,
-        email,
+        normalizedEmail,
         password
-      ); 
+      );
       const user = result.user;
 
       const userRef = doc(db, "users", user.uid);
@@ -97,14 +104,8 @@ export default function Login() {
 
       navigate("/browse");
     } catch (err) {
-      console.error(err);
-      if (err.code === "auth/email-already-in-use") {
-        setError("Email already in use. Try signing in instead.");
-      } else if (err.code === "auth/weak-password") {
-        setError("Password is too weak. Use at least 6 characters.");
-      } else {
-        setError("Sign up failed. Please try again.");
-      }
+      console.error("SIGNUP ERROR:", err.code, err.message);
+      setError(err.message);
     } finally {
       setLoadingEmail(false);
     }
