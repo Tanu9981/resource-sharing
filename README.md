@@ -29,3 +29,5 @@ git clone https://github.com/Tanu9981/resource-sharing.git
 cd resource-sharing
 npm install
 
+npm run dev
+
