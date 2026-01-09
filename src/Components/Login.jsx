@@ -33,7 +33,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmail, setLoadingEmail] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false); // false = login, true = signup
+  const [isSignUp, setIsSignUp] = useState(false); 
 
   const navigate = useNavigate();
 
@@ -70,8 +70,6 @@ export default function Login() {
       setLoadingEmail(false);
     }
   };
-
-  // email/password sign-up (logic only, no layout change)
   const handleEmailSignUp = async () => {
     setError("");
     if (!email || !password) {
@@ -85,7 +83,7 @@ export default function Login() {
         auth,
         email,
         password
-      ); // [web:2]
+      ); 
       const user = result.user;
 
       const userRef = doc(db, "users", user.uid);
@@ -164,7 +162,6 @@ export default function Login() {
       </AppBar>
 
       <Box sx={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
-        {/* LEFT */}
         <Box
           sx={{
             flex: 1,
@@ -178,8 +175,6 @@ export default function Login() {
             ResourceHub
           </Typography>
         </Box>
-
-        {/* RIGHT */}
         <Box
           sx={{
             flex: 1,
@@ -256,8 +251,6 @@ export default function Login() {
                 "& .MuiOutlinedInput-root": { bgcolor: "#020617" },
               }}
             />
-
-            {/* SAME BUTTON, but it now does login or signup based on isSignUp */}
             <Button
               fullWidth
               variant="contained"
@@ -300,8 +293,6 @@ export default function Login() {
             >
               {loadingGoogle ? "Signing in..." : "Continue with Google"}
             </Button>
-
-            {/* Small text toggle to switch between login and signup; layout is same box */}
             <Typography
               variant="body2"
               sx={{ mt: 2, color: "#cbd5f5", textAlign: "center" }}

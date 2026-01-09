@@ -49,6 +49,7 @@ export default function Browse() {
       setResources(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     };
+
     fetchResources();
   }, []);
 
@@ -65,7 +66,8 @@ export default function Browse() {
     (!semester || String(r.semester) === semester) &&
     (!subject || r.subject === subject) &&
     (!type || r.type === type) &&
-    (!searchQuery || r.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+    (!searchQuery ||
+      r.title?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -121,7 +123,7 @@ export default function Browse() {
           Browse Resources
         </Typography>
         <Typography sx={{ color: "#cbd5f5", mt: 1 }}>
-          Semester-wise academic resources shared by seniors
+          Semester-wise academic resources shared by students
         </Typography>
       </Box>
 
@@ -203,11 +205,18 @@ export default function Browse() {
       <Divider sx={{ borderColor: "#1e293b", mb: 4 }} />
 
       <Grid container spacing={4} px={{ xs: 2, md: 6 }} pb={6}>
+        {loading && (
+          <Typography textAlign="center" width="100%">
+            Loading...
+          </Typography>
+        )}
+
         {filteredResources.map(res => (
           <Grid item xs={12} sm={6} md={4} key={res.id}>
             <Card
               sx={{
-               background: "linear-gradient(180deg, #020617 0%, #020617 100%)",
+                background:
+                  "linear-gradient(180deg, #020617 0%, #020617 100%)",
                 borderRadius: 3,
                 height: "100%",
                 transition: "0.3s ease",
@@ -219,14 +228,17 @@ export default function Browse() {
             >
               <CardContent>
                 <Chip label={res.type} color="primary" size="small" />
+
                 <Typography variant="h6" mt={1} color="#ffffff">
                   {res.title}
                 </Typography>
+
                 <Typography sx={{ color: "#e5e7eb", fontSize: 14 }}>
                   {res.subject} • Semester {res.semester}
                 </Typography>
+
                 <Typography sx={{ color: "#cbd5f5", fontSize: 13, mt: 0.5 }}>
-                  Uploaded by {res.uploader}
+                  Uploaded by {res.uploaderName || "User"}
                 </Typography>
               </CardContent>
 
@@ -236,10 +248,14 @@ export default function Browse() {
                     fullWidth
                     variant="contained"
                     startIcon={<DownloadIcon />}
-                    sx={{ fontWeight: 600,bgcolor: "#1d4ed8","&:hover": { bgcolor: "#2563eb" } }}
+                    sx={{
+                      fontWeight: 600,
+                      bgcolor: "#1d4ed8",
+                      "&:hover": { bgcolor: "#2563eb" }
+                    }}
                     onClick={() => window.open(res.driveLink, "_blank")}
                   >
-                    OPEN NOTES
+                    OPEN RESOURCE
                   </Button>
                 )}
               </CardActions>

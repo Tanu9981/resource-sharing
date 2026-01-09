@@ -18,10 +18,12 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import logo from "../assets/logo.png";
 
 export default function Upload() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [title, setTitle] = useState("");
   const [semester, setSemester] = useState("");
@@ -47,6 +49,11 @@ export default function Upload() {
       return;
     }
 
+    if (!user) {
+      alert("User not authenticated");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -58,8 +65,10 @@ export default function Upload() {
         year: year || "",
         description,
         driveLink,
-        uploader: "Tanu",
         approved: false,
+        uploaderName: user.displayName || "Unknown",
+        uploaderEmail: user.email,
+        uploaderUid: user.uid,
         createdAt: serverTimestamp()
       });
 
@@ -130,33 +139,6 @@ export default function Upload() {
           position: "relative"
         }}
       >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "-120px",
-            left: "-120px",
-            width: 320,
-            height: 320,
-            bgcolor: "#38bdf8",
-            borderRadius: "50%",
-            filter: "blur(160px)",
-            opacity: 0.25
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: "-120px",
-            right: "-120px",
-            width: 360,
-            height: 360,
-            bgcolor: "#6366f1",
-            borderRadius: "50%",
-            filter: "blur(180px)",
-            opacity: 0.25
-          }}
-        />
-
         <Card
           sx={{
             width: "100%",
@@ -166,9 +148,7 @@ export default function Upload() {
             borderRadius: 4,
             bgcolor: "rgba(255, 255, 255, 0.92)",
             backdropFilter: "blur(12px)",
-            boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
-            position: "relative",
-            zIndex: 2
+            boxShadow: "0 25px 60px rgba(0,0,0,0.6)"
           }}
         >
           <Typography
@@ -180,16 +160,7 @@ export default function Upload() {
             Upload Academic Resource
           </Typography>
 
-          <Typography
-            variant="body1"
-            textAlign="center"
-            color="#07244dff"
-            mt={1}
-          >
-            Share verified notes, PYQs, or links for juniors
-          </Typography>
-
-          <Divider sx={{ my: 3, borderColor: "#07244dff" }} />
+          <Divider sx={{ my: 3 }} />
 
           <Stack spacing={3}>
             <TextField
@@ -223,15 +194,9 @@ export default function Upload() {
               >
                 <MenuItem value="Python">Python</MenuItem>
                 <MenuItem value="Java">Java</MenuItem>
-                <MenuItem value="Software Engineering">
-                  Software Engineering
-                </MenuItem>
-                <MenuItem value="Data Engineering">
-                  Data Engineering
-                </MenuItem>
-                <MenuItem value="Computer Networks">
-                  Computer Networks
-                </MenuItem>
+                <MenuItem value="Software Engineering">Software Engineering</MenuItem>
+                <MenuItem value="Data Engineering">Data Engineering</MenuItem>
+                <MenuItem value="Computer Networks">Computer Networks</MenuItem>
                 <MenuItem value="Other">Other</MenuItem>
               </Select>
             </FormControl>

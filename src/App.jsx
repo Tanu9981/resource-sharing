@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Login from "./Components/Login";
 import Browse from "./Components/Browse";
 import Upload from "./Components/Upload";
@@ -13,11 +14,11 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* PUBLIC PAGES */}
+          {/* PUBLIC */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
 
-          {/* PROTECTED PAGES */}
+          {/* PROTECTED (ANY LOGGED-IN USER) */}
           <Route
             path="/browse"
             element={
@@ -26,6 +27,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/upload"
             element={
@@ -34,10 +36,12 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* PROTECTED (ADMIN ONLY) */}
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="admin">
                 <Admin />
               </ProtectedRoute>
             }
